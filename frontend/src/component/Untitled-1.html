@@ -1,0 +1,190 @@
+import React, { useEffect, useState } from 'react';
+import { Collapse, Ripple, initTWE } from "tw-elements";
+import { MdDownloadForOffline } from "react-icons/md";
+import { motion } from "framer-motion";
+import { getUser } from "../api/userApi";
+import { addPersonalDetail, addEducationDetail, addEmploymentnDetail } from "../api/apiCalls";
+import PersonalDetail from "./common/PersonalDetail";
+import AboutMe from './common/AboutMe';
+import Contact from './common/Contact';
+import EducationDetails from './common/EducationDetails';
+import EmployeDetails from './common/EmployeDetails';
+import Skills from './common/Skills';
+
+function Profile() {
+  const [expandedSection, setExpandedSection] = useState(null);
+
+  const [personalData, setPersonalData] = useState({
+    firstName: "",
+    lastName: "",
+    gender: "",
+    address: "",
+    city: "",
+    state: "",
+    country: "",
+    description: "",
+    email: "",
+    phoneNumber: "",
+    linkedin: "",
+    github: "",
+    isEdit: false
+  });
+
+  const [companyDetail, setCompanyDetail] = useState({
+    companyName: "",
+    position: "",
+    startDate: "",
+    endDate: "",
+    location: ""
+  });
+
+  const [companies, setCompanies] = useState([]);
+  const [educationDetails, setEducationDetails] = useState({
+    instituteName: "",
+    university: "",
+    stream: "",
+    startDate: "",
+    endDate: "",
+    location: ""
+  });
+
+  const [educations, setEducations] = useState([]);
+  const [skills, setSkills] = useState([]);
+
+  useEffect(() => {
+    initTWE({ Collapse, Ripple });
+    fetchUserData();
+  }, []);
+
+  const fetchUserData = async () => {
+    try {
+      const userData = await getUser();
+      setPersonalData({ ...userData.user, ...userData.personalDetail, isEdit: true });
+      if (userData.education) setEducations(userData.education);
+      if (userData.employment) setCompanies(userData.employment);
+    } catch (error) {
+      console.error("Error fetching user data:", error);
+    }
+  };
+
+  const toggleSection = (section) => {
+    setExpandedSection((prevSection) => (prevSection === section ? null : section));
+  };
+
+  const handleChange = (e, updater) => {
+    const { name, value } = e.target;
+    updater((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmitForm = async (section) => {
+    try {
+      if (section === 'PERSONAL_DETAIL') {
+        await addPersonalDetail(personalData);
+      } else if (section === "EDUCATION_DETAIL") {
+        await addEducationDetail(educationDetails);
+        setEducations((prev) => [...prev, educationDetails]);
+      } else if (section === "EMPLOYMENT_DETAIL") {
+        await addEmploymentnDetail(companyDetail);
+        setCompanies((prev) => [...prev, companyDetail]);
+      }
+    } catch (error) {
+      console.error("Error submitting form data:", error);
+    }
+  };
+
+  return (
+    <div className="bg-yellow-100 pt-28 pb-20 flex justify-center">
+      <motion.div
+        initial={{ opacity: 0, y: -50 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="container w-3/4 bg-white min-h-full rounded-2xl px-10 py-6 border border-gray-300 shadow-lg"
+      >
+        {/* Header Section */}
+        <div className="py-5 flex items-center border-b">
+          <div className="flex items-center w-1/2">
+            <div className="w-24 h-24 bg-gray-100 rounded-full">
+              <label htmlFor="fileInput" className="cursor-pointer flex justify-center items-center h-full">
+                <svg viewBox="0 0 128 128" className="w-12 h-12 text-gray-400" role="img" aria-label="Upload avatar">
+                  <path fill="currentColor" d="M103,102.1388 C93.094,111.92 79.3504,118 64.1638,118 C48.8056,118 34.9294,111.768 25,101.7892 L25,95.2 C25,86.8096 31.981,80 40.6,80 L87.4,80 C96.019,80 103,86.8096 103,95.2 L103,102.1388 Z"></path>
+                  <path fill="currentColor" d="M63.9961647,24 C51.2938136,24 41,34.2938136 41,46.9961647 C41,59.7061864 51.2938136,70 63.9961647,70 C76.6985159,70 87,59.7061864 87,46.9961647 C87,34.2938136 76.6985159,24 63.9961647,24"></path>
+                </svg>
+              </label>
+              <input type="file" id="fileInput" className="hidden" />
+            </div>
+            <h1 className="text-2xl ml-5">{personalData.firstName || "Your Name"}</h1>
+          </div>
+          <div className="flex items-center w-1/2 justify-end space-x-4">
+            <button className="bg-slate-600 text-white font-bold py-2 px-4 rounded-full flex items-center">
+              <MdDownloadForOffline className="mr-2" />
+              Download
+            </button>
+            <button
+              className="bg-red-500 text-white font-bold py-2 px-4 rounded-full"
+              onClick={() => {
+                localStorage.removeItem('token');
+                window.location.reload();
+              }}
+            >
+              Logout
+            </button>
+          </div>
+        </div>
+
+        {/* Sections */}
+        <div className="py-5 flex flex-col gap-5">
+          <PersonalDetail
+            personalData={personalData}
+            setPersonalData={setPersonalData}
+            handleSubmitForm={handleSubmitForm}
+            toggleSection={toggleSection}
+            expandedSection={expandedSection}
+            handleChange={(e) => handleChange(e, setPersonalData)}
+          />
+          <AboutMe
+            personalData={personalData}
+            setPersonalData={setPersonalData}
+            handleSubmitForm={handleSubmitForm}
+            toggleSection={toggleSection}
+            expandedSection={expandedSection}
+            handleChange={(e) => handleChange(e, setPersonalData)}
+          />
+          <Contact
+            personalData={personalData}
+            setPersonalData={setPersonalData}
+            handleSubmitForm={handleSubmitForm}
+            toggleSection={toggleSection}
+            expandedSection={expandedSection}
+            handleChange={(e) => handleChange(e, setPersonalData)}
+          />
+          <EducationDetails
+            educations={educations}
+            setEducations={setEducations}
+            handleSubmitForm={handleSubmitForm}
+            educationDetails={educationDetails}
+            toggleSection={toggleSection}
+            expandedSection={expandedSection}
+            handleChange={(e) => handleChange(e, setEducationDetails)}
+          />
+          <EmployeDetails
+            companies={companies}
+            setCompanies={setCompanies}
+            handleSubmitForm={handleSubmitForm}
+            companyDetail={companyDetail}
+            toggleSection={toggleSection}
+            expandedSection={expandedSection}
+            handleChange={(e) => handleChange(e, setCompanyDetail)}
+          />
+          <Skills
+            skills={skills}
+            setSkills={setSkills}
+            toggleSection={toggleSection}
+            expandedSection={expandedSection}
+          />
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
+export default Profile;
